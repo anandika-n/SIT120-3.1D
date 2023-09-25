@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PeriodPal</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
+    <script src="https://www.gstatic.com/dialogflow-console/fast/messenger/bootstrap.js"></script>
+    
+    <style>
+        /* Reset some default styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Global styles */
+        body {
+            background-color: #ff0088;
+            color: #fff;
+            font-family: Times New Roman, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        
+        .chat-container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        header {
+            background-color: #f05593;
+            padding: 5px 0;
+            text-align: center;
+            position: relative; /* Added position for shapes */
+        }
+        header h1 {
+    margin: 0;
+    font-size: 36px;
+    color: #fff;
+    text-align: center;
+    margin-top: 20px;
+    opacity: 0; /* Initial opacity set to 0 */
+    animation: fadeIn 1s ease-in-out; /* Animation added */
+    transition: opacity 0.5s; /* Transition added */
+}
+
+header h1 {
+    margin: 0;
+    font-size: 36px;
+    color: #fff;
+    text-align: center;
+    margin-top: 20px;
+    opacity: 0; /* Initial opacity set to 0 */
+    animation: fadeIn 5s ease-in-out; /* Animation added */
+    transition: opacity 0.5s; /* Transition added */
+}
+
+header h1:hover {
+    opacity: 1; /* Increase opacity on hover */
+}
+
+ @keyframes fadeIn {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        nav {
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 5px;
+            font-size: 15px;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        /* Audio and Video Container */
+        .media-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            max-width: 800px;
+            margin: 20px auto;
+        }
+
+        .audio-container,
+        .video-container {
+            width: 48%;
+            margin-bottom: 20px;
+        }
+
+        .content {
+            max-width: 400px;
+            margin: 0 auto;
+            background-color: rgb(222, 46, 113);
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 18px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="date"] {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 5px;
+            border: none;
+            background-color: rgb(230, 113, 144);
+            color: #fffafa;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button[type="submit"] {
+            background-color: #fe0062;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.3s, color 0.3s; /* Transition added */
+        }
+
+        button[type="submit"]:hover {
+            background-color: #555;
+            color: #fff;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            column-count: 2;
+            break-inside: avoid-column;
+        }
+
+        ul li {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        footer {
+            background-color: #f64ba6;
+            text-align: center;
+            padding: 1px 0;
+            position: absolute;
+            bottom: 12;
+            width: 100%;
+            color: #fff;
+        }
+
+        /* Shapes in header and footer */
+        svg.header-shape {
+            position: left;
+            top: 10px;
+            left: 10px;
+        }
+
+        svg.footer-shape {
+            position: left;
+            bottom: 10px;
+            left: 10px;
+        }
+
+        /* Media queries */
+        @media (max-width: 768px) {
+            body {
+                background-color: #ff0088;
+            }
+
+            .media-container {
+                flex-direction: column;
+            }
+
+            .audio-container,
+            .video-container {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 576px) {
+            body {
+                background-color: #ff99cc;
+            }
+
+            header h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+     
+    <div id="chart-container">
+        <canvas id="myChart"></canvas>
+    </div>
+
+    <div class="chat-container">
+        <h1>Simple Chatbot</h1>
+        <div id="chat"></div>
+        <form id="user-input">
+            <input type="text" id="message" placeholder="Type your response...">
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <div id="app">
+        <header>
+            <h1>PeriodPal - your period tracker</h1>
+            <nav>
+                <router-link to="/">User Details</router-link>
+                <router-link to="/period-details">Period Details</router-link>
+                <router-link to="/health-insights">Health Insights</router-link>
+            </nav>
+        </header>
+        
+        <router-view></router-view>
+    </div>
+
+    <div id="chat-widget-container"></div>
+
+    <!-- Audio and Video Containers -->
+    <div class="media-container">
+        <!-- Audio -->
+        <div class="audio-container">
+            <audio controls>
+                <source src="amazing-day-iros-young-main-version-18425-02-07.mp3" type="audio/mp3"> <!-- Replace with your audio file -->
+                Your browser does not support the audio tag.
+            </audio>
+        </div>
+
+        <!-- Video -->
+        <div class="video-container">
+            <video controls width="400" height="300">
+                <source src="Period.video.mp4" type="video/mp4"> <!-- Replace with your video file -->
+                Your browser does not support the video tag.
+            </video>
+        </div>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-router@3.5.2/dist/vue-router.js"></script>
+    <script>
+
+window.addEventListener('load', function () {
+        const chatWidget = document.querySelector('#chat-widget-container');
+        window.dfMessenger = new window.dialogflow.Messenger({
+            chatEl: chatWidget,
+            config: {
+                agentId: 'YOUR_AGENT_ID',
+                // Other configuration options
+            }
+        });
+        window.dfMessenger.render();
+    });
+        // Define components for different sections
+        const UserDetails = {
+            template: `
+                <div class="content">
+                    <h1>User Details</h1>
+                    <form>
+                        <label for="name">Name:</label>
+                        <input type="text" id="name" placeholder="Type in your name" required>
+
+                        <label for="age">Age:</label>
+                        <input type="number" id="age" placeholder="Type in your age" required>
+
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" placeholder="Type in your email" required>
+
+                        <label for="phone">Phone Number:</label>
+                        <input type="tel" id="phone" placeholder="Type in your phone number" required>
+
+                        <button type="submit">Submit</button>
+                    </form>
+                </div>
+            `,
+        };
+
+        const PeriodDetails = {
+            data() {
+                return {
+                    inCycleText: '',
+                    symptoms: {
+                        stomachPain: false,
+                        headache: false,
+                        backPain: false,
+                        restlessness: false,
+                        nausea: false,
+                    },
+                };
+            },
+            template: `
+                <div class="content">
+                    <h1>Your Period Details</h1>
+                    <form>
+                        <label for="PeriodDate">Select Date:</label>
+                        <input type="date" id="PeriodDate" required>
+
+                        <label for="inCycle">In Cycle:</label>
+                        <input type="text" id="inCycle" v-model="inCycleText" placeholder="Yes or No" required>
+
+                        <label>Symptoms:</label>
+                        <label for="stomachPain">Stomach Pain:</label>
+                        <input type="checkbox" id="stomachPain" v-model="symptoms.stomachPain">
+                        <label for="headache">Headache:</label>
+                        <input type="checkbox" id="headache" v-model="symptoms.headache">
+                        <label for="backPain">Back Pain:</label>
+                        <input type="checkbox" id="backPain" v-model="symptoms.backPain">
+                        <label for="restlessness">Restlessness:</label>
+                        <input type="checkbox" id="restlessness" v-model="symptoms.restlessness">
+                        <label for="nausea">Nausea:</label>
+                        <input type="checkbox" id="nausea" v-model="symptoms.nausea">
+
+                        <button type="submit">Submit</button>
+                    </form>
+                </div>
+            `,
+        };
+
+        const HealthInsights = {
+            template: `
+                <div class="content">
+                    <h1>Health Insights</h1>
+                    <p>Here are some health tips related to periods:</p>
+                    <ul>
+                        <li>Stay hydrated during your period to reduce bloating.</li>
+                        <li>Exercise can help relieve menstrual cramps and improve mood.</li>
+                        <li>Consider using a heating pad to soothe cramps.</li>
+                        <li>Eat a balanced diet with plenty of iron-rich foods to combat fatigue.</li>
+                        <li>Track your menstrual cycle to better understand your body.</li>
+                    </ul>
+                </div>
+            `,
+        };
+
+        // Create Vue Router instance and configure routes
+        const router = new VueRouter({
+            routes: [
+                { path: '/', component: UserDetails },
+                { path: '/period-details', component: PeriodDetails },
+                { path: '/health-insights', component: HealthInsights },
+            ],
+        });
+
+        const app = new Vue({
+            router,
+        }).$mount('#app');
+
+        const data = {
+    labels: ["January", "February", "March", "April", "May"],
+    datasets: [{
+        label: "Monthly Days Of Periods",
+        data: [10, 20, 15, 30, 25],
+        backgroundColor: "rgba(75, 192, 192, 0.2)",
+        borderColor: "rgba(75, 192, 192, 1)",
+        borderWidth: 1
+    }]
+};
+
+// Create the chart
+const ctx = document.getElementById('myChart').getContext('2d');
+const myChart = new Chart(ctx, {
+    type: 'bar',
+    data: data,
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+const chatContainer = document.getElementById("chat");
+        const userInputForm = document.getElementById("user-input");
+        const messageInput = document.getElementById("message");
+
+const questions = [
+            "Do you feel like have chololates?",
+            "How are you feEling?",
+            "Type in a positive a comment to feeling good?"
+        ];
+
+       
+
+let questionIndex = 0;
+
+        // Function to add a message to the chat container
+        function addMessage(text, isUser = false) {
+            const messageDiv = document.createElement("div");
+            messageDiv.classList.add(isUser ? "user-message" : "bot-message");
+            messageDiv.textContent = text;
+            chatContainer.appendChild(messageDiv);
+        }
+
+        // Function to handle user input
+        function handleUserInput(e) {
+            e.preventDefault();
+
+            const userMessage = messageInput.value;
+            addMessage(userMessage, true);
+            messageInput.value = "";
+
+            // Check if there are more questions to ask
+            if (questionIndex < questions.length) {
+                const botMessage = questions[questionIndex];
+                questionIndex++;
+                setTimeout(() => addMessage(botMessage), 500);
+            } else {
+                addMessage("Thanks for chatting!");
+                messageInput.disabled = true; // Disable input after completing the chat
+            }
+        }
+
+        // Add event listener to the user input form
+        userInputForm.addEventListener("submit", handleUserInput);
+
+        // Start the conversation with the first question
+        addMessage(questions[questionIndex]);
+        questionIndex++;
+    </script>
+
+    
+
+
+
+
+       
+<footer>
+    <svg class="footer-shape" width="50" height="50">
+        <circle cx="100" cy="100" r="50" fill="blue" />
+        <rect x="200" y="50" width="100" height="100" fill="green" />
+    </svg>
+    <p>&copy; 2023 PeriodPal</p>
+</footer>
+</body>
+</html>
