@@ -9,7 +9,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
     <script src="https://www.gstatic.com/dialogflow-console/fast/messenger/bootstrap.js"></script>
-    
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="periodpal.js"></script>
+
+
     <style>
         /* Reset some default styles */
         * {
@@ -207,19 +210,27 @@ header h1:hover {
             }
         }
 
-        @media (max-width: 576px) {
-            body {
-                background-color: #ff99cc;
-            }
-
-            header h1 {
-                font-size: 24px;
-            }
+        
+        #chat-messages div {
+            margin-bottom: 10px;
+            padding: 5px;
+            background-color: #f38787;
+            border: 1px solid #211e1e;
+            border-radius: 5px;
         }
+
+        #map {
+    height: 400px;
+    width: 100%;
+}
+
     </style>
 </head>
 <body>
-
+    <chat-container>
+        <chat-message v-for="(message, index) in messages" :key="index" :text="message.text" :is-user="message.isUser"></chat-message>
+      </chat-container>
+      
      
     <div id="chart-container">
         <canvas id="myChart"></canvas>
@@ -268,9 +279,38 @@ header h1:hover {
         </div>
     </div>
 
+    
+<button id="loadDataButton">Load New Messages</button>
+<div id="chat-messages">
+    <div class="message">
+        <div class="user">User:</div>
+        <div class="text">Hello, how can I help you?</div>
+    </div>
+    <div class="message">
+        <div class="user">Bot:</div>
+        <div class="text">Hi there! I can assist you with various tasks.</div>
+    </div>
+    <!-- Add more messages here as needed -->
+</div>
+
+<div id="scatterplot"></div>
+<div id="bar-chart"></div>
+
+<div id="map"></div>
+
+<chat-message v-for="(message, index) in messages" :key="index" :text="message.text" :is-user="message.isUser"></chat-message>
+
+
+<form id="user-input" @submit="sendMessage">
+    <input type="text" id="message" v-model="userMessage" placeholder="Type your response...">
+    <button type="submit">Send</button>
+  </form>
+  
 
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue-router@3.5.2/dist/vue-router.js"></script>
+    
+    
     <script>
 
 window.addEventListener('load', function () {
@@ -379,10 +419,10 @@ window.addEventListener('load', function () {
         }).$mount('#app');
 
         const data = {
-    labels: ["January", "February", "March", "April", "May"],
+    labels: ["January", "February", "March", "April", "May", "June", "July", "August", "September"],
     datasets: [{
-        label: "Monthly Days Of Periods",
-        data: [10, 20, 15, 30, 25],
+        label: "Monthly Dats Of Periods",
+        data: [17, 11, 11, 11, 11, 11, 10, 7, 2],
         backgroundColor: "rgba(75, 192, 192, 0.2)",
         borderColor: "rgba(75, 192, 192, 1)",
         borderWidth: 1
@@ -403,13 +443,37 @@ const myChart = new Chart(ctx, {
     }
 });
 
+
+  // Function to fetch new chat messages
+  function loadNewMessages() {
+            // Simulate fetching new messages from a server or another source
+            const newMessages = [
+                "****You are pretty****",
+                "****Stay positive****",
+                "****You are loved****",
+            ];
+
+            // Append the new messages to the chat-messages container
+            const chatMessagesContainer = document.getElementById("chat-messages");
+            newMessages.forEach((message) => {
+                const messageDiv = document.createElement("div");
+                messageDiv.textContent = message;
+                chatMessagesContainer.appendChild(messageDiv);
+            });
+        }
+
+        // Add an event listener to the button to load new messages
+        const loadDataButton = document.getElementById("loadDataButton");
+        loadDataButton.addEventListener("click", loadNewMessages);
+    
+
 const chatContainer = document.getElementById("chat");
         const userInputForm = document.getElementById("user-input");
         const messageInput = document.getElementById("message");
 
 const questions = [
             "Do you feel like have chololates?",
-            "How are you feEling?",
+            "How are you feeling?",
             "Type in a positive a comment to feeling good?"
         ];
 
@@ -449,7 +513,104 @@ let questionIndex = 0;
 
         // Start the conversation with the first question
         addMessage(questions[questionIndex]);
+   
         questionIndex++;
+
+
+        const Data = [
+    { x: 1, y: 4 },
+    { x: 2, y: 6 },
+    { x: 3, y: 3 },
+    // Add more data points as needed
+];
+
+// Create scatterplot
+const scatterplot = d3.select("#scatterplot");
+// Create bar chart
+const barChart = d3.select("#bar-chart");
+
+// Implement event listeners for user interactions in the scatterplot
+scatterplot.selectAll("circle")
+    .on("click", function(d) {
+        // Capture selected data point
+        const selectedDataPoint = d;
+                // Filter data in bar chart based on the selected data point
+                const filteredData = data.filter(item => item.x === selectedDataPoint.x);
+
+                // Update bar chart with filtered data
+                updateBarChart(filteredData);
+
+                // Highlight or emphasize the selected data point in the scatterplot
+                scatterplot.selectAll("circle").attr("class", "normal"); // Reset all circles
+                d3.select(this).attr("class", "selected"); // Highlight selected circle
+            });
+
+        // Function to update the bar chart
+        function updateBarChart(filteredData) {
+            // Implement code to update the bar chart based on filteredData
+        }
+
+        function initMap() {
+    const map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 37.7749, lng: -122.4194 }, // Replace with your office's coordinates
+        zoom: 15, // Adjust the zoom level as needed
+    });
+
+    // Add a marker for your office location
+    const marker = new google.maps.Marker({
+        position: { lat: 37.7749, lng: -122.4194 }, // Replace with your office's coordinates
+        map: map,
+        title: "Your Office Location", // Tooltip when hovering over the marker
+    });
+}
+
+// Example component for chat messages
+Vue.component('chat-message', {
+  props: ['text', 'isUser'],
+  template: `
+    <div :class="isUser ? 'user-message' : 'bot-message'">
+      {{ text }}
+    </div>
+  `,
+});
+
+
+new Vue({
+  // ...
+  methods: {
+    sendMessage() {
+      // Send userMessage to the chat
+      this.messages.push({ text: this.userMessage, isUser: true });
+
+      // Emit an event to notify other components (e.g., the chatbot) about the user's message
+      this.$emit('user-message', this.userMessage);
+
+      // Clear the input field
+      this.userMessage = '';
+    },
+  },
+});
+
+
+new Vue({
+  // ...
+  methods: {
+    // Handle user messages
+    handleUserMessage(message) {
+      // Process user's message and send a response
+      // ...
+      
+      // Send a response to the chat
+      this.messages.push({ text: response, isUser: false });
+    },
+  },
+  created() {
+    // Listen for the user message event
+    this.$on('user-message', this.handleUserMessage);
+  },
+});
+
+
     </script>
 
     
@@ -458,12 +619,13 @@ let questionIndex = 0;
 
 
        
-<footer>
+ <footer>
     <svg class="footer-shape" width="50" height="50">
         <circle cx="100" cy="100" r="50" fill="blue" />
         <rect x="200" y="50" width="100" height="100" fill="green" />
     </svg>
     <p>&copy; 2023 PeriodPal</p>
+</footer>
 </footer>
 </body>
 </html>
